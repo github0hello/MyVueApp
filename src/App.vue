@@ -104,9 +104,7 @@ const onSubmit = () => {
   axios({
     url: 'http://127.0.0.1:5000/api',
     method: 'post',
-    data: {
-      date: "ddd" // 将数据替换为实际数据
-    }
+    data: form,
   })
     .then(function (response) {
       console.log(response)
