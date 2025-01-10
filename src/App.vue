@@ -102,10 +102,10 @@ const onSubmit = () => {
   console.log('submit!')
   console.log(form)
   axios({
-    method: 'get',
-    url: 'http://127.0.0.1:5000/',
-    headers: {
-      "Access-Control-Allow-Origin": "*",
+    url: 'http://127.0.0.1:5000/api',
+    method: 'post',
+    data: {
+      date: "ddd" // 将数据替换为实际数据
     }
   })
     .then(function (response) {
