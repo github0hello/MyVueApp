@@ -1,11 +1,16 @@
 <template>
   <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
-
-
-    <p>Server1</p>
+    <el-card style="max-width: 480px">
+    <template #header>
+      <div class="card-header">
+        <span>Server1</span>
+      </div>
+    </template>
     <el-cascader v-model="value" :options="options" @change="chosseHandle" />
-
-    <el-button type="primary" @click="OnSubmit">OK</el-button>
+    <template #footer>
+      <el-button type="primary" @click="OnSubmit">OK</el-button>
+    </template>
+  </el-card>
   </el-config-provider>
 </template>
 
