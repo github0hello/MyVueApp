@@ -1,6 +1,6 @@
 <template>
   <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
-    <el-card style="max-width: 480px">
+    <el-card>
     <template #header>
       <div class="card-header">
         <span>Server1</span>
@@ -24,7 +24,7 @@ import axios from 'axios'
 
 // 请求数据
 const options = ref([])
-axios.get('http://127.0.0.1:8080/')
+axios.get(prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/"))
   .then(function (response) {
     options.value = Array.from(response.data)
   });
@@ -43,7 +43,7 @@ const chosseHandle = (value) => {
 
 const OnSubmit = () => {
   axios({
-    url: 'http://127.0.0.1:5000/api',
+    url: 'http://127.0.0.1:8080/api',
     method: 'post',
     data: { "Server1": Server1_path.value },
   })

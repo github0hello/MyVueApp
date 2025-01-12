@@ -1,15 +1,19 @@
-import flask
+from flask import Flask, request
 from flask_cors import CORS
 import os
 import json
-
-
-app = flask.Flask(__name__)
+import subprocess
+DEBUG = True
+root_dir = "C:\\Users\\Administrator\\Desktop\\ComfyUI\\"
+if not DEBUG:
+    os.system("oss login")
+    root_dir = "/hy-tmp/"
+app = Flask(__name__)
 CORS(app)
 
 def get_dir_tree_json(root_dir):
     """
-    获取目录树结构并转换为JSON格式的字符串
+    获取目录树结构
     """
     def get_dir_tree(root_dir):
         dir_tree = []
@@ -39,8 +43,6 @@ def get_dir_tree_json(root_dir):
 
 @app.route('/')
 def index():
-    # 示例用法
-    root_dir = "C:/Users/Administrator/Desktop/oss"
     try:
         dir_tree_json = get_dir_tree_json(root_dir)
         return dir_tree_json
@@ -48,4 +50,21 @@ def index():
         print(e)
 
 
+@app.route('/api', methods=['GET','POST'])
+def api():
+    # 获取请求的Path
+    path = str()
+    for i in request.json['Server1']:
+        path = path + i + "\\"
+    print(root_dir + path)
+    return "OK"
+
 app.run(debug=True, port=8080)
+
+# C:\Users\Administrator\Desktop\ComfyUI
+
+@app.route('/hy-tmp', methods=['GET'])
+def hy_tmp():
+    result = subprocess.run(['zip', '-0', 'cache.zip','/hy-tmp'], capture_output=True, text=True)
+    # 压缩hy-tmp文件夹
+    return result.stdout
