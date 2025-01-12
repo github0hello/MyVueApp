@@ -7,7 +7,7 @@
     size="50%"
   >
 
-  <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox/>
+  <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox @check-change="TreeChange"/>
   </el-drawer>
 
     <el-card>
@@ -114,7 +114,9 @@ const Uploadroot = () => {
 import { ElDrawer } from 'element-plus'
 
 
-
+const TreeChange = (data) => {
+  console.log(data.value)
+}
 
 </script>
 
