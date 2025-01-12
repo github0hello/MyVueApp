@@ -12,7 +12,28 @@
 
 ```sh
 npm install
+```
+
+
+### 运行
+
+```sh
 npm run dev
+```
+
+#### 后端
+
+##### Backend
+
+```sh
+cd backend
+python app.py
+```
+
+##### Client
+```sh
+cd client
+python app.py
 ```
 
 ### 要构建生产环境的代码

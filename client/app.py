@@ -59,12 +59,13 @@ def api():
     print(root_dir + path)
     return "OK"
 
+@app.route('/hy-tmp', methods=['GET'])
+def hy_tmp():
+    if not DEBUG:
+        result = subprocess.run(['zip', '-0', 'cache.zip','/hy-tmp'], capture_output=True, text=True)
+        # 压缩hy-tmp文件夹
+        return result.stdout
+    return "OK"
 app.run(debug=True, port=8080)
 
 # C:\Users\Administrator\Desktop\ComfyUI
-
-@app.route('/hy-tmp', methods=['GET'])
-def hy_tmp():
-    result = subprocess.run(['zip', '-0', 'cache.zip','/hy-tmp'], capture_output=True, text=True)
-    # 压缩hy-tmp文件夹
-    return result.stdout
