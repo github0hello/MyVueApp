@@ -22,13 +22,13 @@ def get_dir_tree_json(root_dir):
             if os.path.isdir(item_path):
                 children = get_dir_tree(item_path)
                 dir_tree.append({
-                    'value': item,
+                    'value': root_dir + item,
                     'label': item,
                     'children': children
                 })
             else:
                 dir_tree.append({
-                    'value': item,
+                    'value': root_dir + item,
                     'label': item
                 })
         return dir_tree

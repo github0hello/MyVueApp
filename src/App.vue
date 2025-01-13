@@ -1,14 +1,11 @@
 <template>
-  <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
-  <el-drawer
-    v-model="table"
-    title="I have a nested table inside!"
-    direction="rtl"
-    size="50%"
-  >
 
-  <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox @check-change="TreeChange"/>
-  </el-drawer>
+
+  <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
+    <el-drawer v-model="file_tree_state" title="I have a nested table inside!" direction="rtl" size="50%">
+
+      <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox @check-change="TreeChange" />
+    </el-drawer>
 
     <el-card>
       <template #header>
@@ -18,12 +15,21 @@
           </el-badge>
         </div>
       </template>
-      <el-button text @click="table = true" type="primary">打开目录树</el-button>
+      <el-button text @click="file_tree_state = true" type="primary">打开目录树</el-button>
     </el-card>
     <el-card>
       <template #header>
         <div class="card-header">
           <span>Server1</span>
+          <button class="reset_button" @click="reset_root_url">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="20" height="20">
+              <path fill="currentColor"
+                d="M784.512 230.272v-50.56a32 32 0 1 1 64 0v149.056a32 32 0 0 1-32 32H667.52a32 32 0 1 1 0-64h92.992A320 320 0 1 0 524.8 833.152a320 320 0 0 0 320-320h64a384 384 0 0 1-384 384 384 384 0 0 1-384-384 384 384 0 0 1 643.712-282.88z">
+              </path>
+            </svg>
+          </button>
+          <br>
+          <span>IP: {{ root_url }}</span>
         </div>
       </template>
       <el-cascader v-model="value" :options="file_tree_data" @change="chosseHandle" />
@@ -44,30 +50,42 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, h } from 'vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import axios from 'axios'
-import { h } from 'vue'
-import { ElNotification } from 'element-plus'
-import { ElLoading } from 'element-plus'
-
+import { ElNotification, ElLoading } from 'element-plus'
+import Cookies from 'js-cookie'
 import 'element-plus/dist/index.css'
 
+
+
+
 // 初始变量
-const file_file_tree = ref(false) // 文件树打开状态
-const root_url = prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/")
+const file_tree_state = ref(false) // 文件树打开状态
+let root_url = "" // Server1的IP地址
 const file_tree_data = ref([]) // 文件数
 const locale = computed(() => (zhCn))
 const Server1_path = ref('')
 const value = ref([])
-const table = ref(false)
+
+
+// 使用Cookie存储Root_url
+// this.$cookies.set("root_url", root_url)
+
+// 获取url
+if (Cookies.get("root_url") == null) {
+  root_url = prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/")
+  Cookies.set("root_url", root_url, { expires: 7 })
+} else {
+  root_url = Cookies.get("root_url")
+}
 
 // 请求文件数据
 const init_loading = ElLoading.service({
-    lock: true,
-    text: 'Loading',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })  //创建一个加载
+  lock: true,
+  text: 'Loading',
+  background: 'rgba(0, 0, 0, 0.7)',
+})  //创建一个加载
 axios.get(root_url)
   .then(function (response) {
     file_tree_data.value = Array.from(response.data)
@@ -113,14 +131,24 @@ const Uploadroot = () => {
 
 import { ElDrawer } from 'element-plus'
 
+const reset_root_url = () => {
+  root_url = prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/")
+  Cookies.set("root_url", root_url, { expires: 7 })
+}
 
-const TreeChange = (data) => {
-  console.log(data.value)
+const TreeChange = (data, checked, indeterminate) => {
+  console.log(data.value, checked, indeterminate)
 }
 
 </script>
 
 
-<!-- <style scoped>
-/* None */
-</style> -->
+<style scoped>
+/* 设置重置URL按钮为透明 */
+.reset_button {
+  background-color: transparent;
+  border: none;
+  padding: 10px 20px;
+  outline: none;
+}
+</style>
