@@ -2,11 +2,12 @@
 
 
   <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
+  <!-- 目录树 -->
     <el-drawer v-model="file_tree_state" title="I have a nested table inside!" direction="rtl" size="50%">
 
       <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox @check-change="TreeChange" />
+      <el-button type="primary" @click="chosses_tree_finish">OK</el-button>
     </el-drawer>
-
     <el-card>
       <template #header>
         <div class="card-header">
@@ -17,6 +18,7 @@
       </template>
       <el-button text @click="file_tree_state = true" type="primary">打开目录树</el-button>
     </el-card>
+    <!-- 选择模块 -->
     <el-card>
       <template #header>
         <div class="card-header">
@@ -37,6 +39,7 @@
         <el-button type="primary" @click="chosses_finish">OK</el-button>
       </template>
     </el-card>
+    <!-- 上传到OSS -->
     <el-card>
       <template #header>
         <div class="card-header">
@@ -53,7 +56,7 @@
 import { computed, ref, h } from 'vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import axios from 'axios'
-import { ElNotification, ElLoading } from 'element-plus'
+import { ElNotification, ElLoading , ElMessage} from 'element-plus'
 import Cookies from 'js-cookie'
 import 'element-plus/dist/index.css'
 
@@ -67,6 +70,9 @@ const file_tree_data = ref([]) // 文件数
 const locale = computed(() => (zhCn))
 const Server1_path = ref('')
 const value = ref([])
+let chosse_file = []
+
+
 
 
 // 使用Cookie存储Root_url
@@ -90,13 +96,20 @@ axios.get(root_url)
   .then(function (response) {
     file_tree_data.value = Array.from(response.data)
     init_loading.close()
-  });
+  })
+  .catch(function (error) {
+    init_loading.close()
+    ElMessage({
+    message: error,
+    type: 'error',
+    plain: true,
+  })
+})
 
 
 const chosseHandle = (value) => {
   Server1_path.value = value
 }
-
 
 const chosses_finish = () => {
   axios({
@@ -129,17 +142,26 @@ const Uploadroot = () => {
   )
 }
 
-import { ElDrawer } from 'element-plus'
+
 
 const reset_root_url = () => {
   root_url = prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/")
   Cookies.set("root_url", root_url, { expires: 7 })
+  window.location.href = window.location.href
+
 }
 
-const TreeChange = (data, checked, indeterminate) => {
-  console.log(data.value, checked, indeterminate)
+const TreeChange = (data   ) => {
+  if (chosse_file.includes(data.value)) {
+  // pass
+} else {
+    chosse_file.push(data.value);
+}
 }
 
+const chosses_tree_finish = () => {
+  console.log(chosse_file)
+}
 </script>
 
 

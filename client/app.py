@@ -4,13 +4,12 @@ import os
 import json
 import subprocess
 DEBUG = True
-root_dir = "C:\\Users\\Administrator\\Desktop\\ComfyUI\\"
+root_dir = "C:\Users\Administrator\Desktop\ComfyUI"
 if not DEBUG:
     os.system("oss login")
     root_dir = "/hy-tmp/"
 app = Flask(__name__)
 CORS(app)
-
 def get_dir_tree_json(root_dir):
     """
     获取目录树结构
@@ -48,6 +47,7 @@ def index():
         return dir_tree_json
     except ValueError as e:
         print(e)
+        return str(e)
 
 
 @app.route('/api', methods=['GET','POST'])
@@ -62,10 +62,20 @@ def api():
 @app.route('/hy-tmp', methods=['GET'])
 def hy_tmp():
     if not DEBUG:
-        result = subprocess.run(['zip', '-0', 'cache.zip','/hy-tmp'], capture_output=True, text=True)
-        # 压缩hy-tmp文件夹
+        # 指定 Shell 脚本的路径
+        script_path = '/hy-tmp/tmp.sh'
+        
+        # 运行 Shell 脚本
+        result = subprocess.run(['sh', script_path], capture_output=True, text=True)
+        
+        # 检查子进程的返回码
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(result.stderr)
+                # 压缩hy-tmp文件夹
         return result.stdout
     return "OK"
-app.run(debug=True, port=8080)
+app.run(debug=DEBUG, port=8080, host="0.0.0.0")
 
 # C:\Users\Administrator\Desktop\ComfyUI
