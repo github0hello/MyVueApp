@@ -3,8 +3,8 @@ from flask_cors import CORS
 import os
 import json
 import subprocess
-DEBUG = True
-root_dir = "C:\Users\Administrator\Desktop\ComfyUI"
+DEBUG = False
+root_dir = "/mnt/c/Users/Administrator/Desktop/MyVueApp/client"
 if not DEBUG:
     os.system("oss login")
     root_dir = "/hy-tmp/"
@@ -62,20 +62,37 @@ def api():
 @app.route('/hy-tmp', methods=['GET'])
 def hy_tmp():
     if not DEBUG:
-        # 指定 Shell 脚本的路径
-        script_path = '/hy-tmp/tmp.sh'
-        
-        # 运行 Shell 脚本
-        result = subprocess.run(['sh', script_path], capture_output=True, text=True)
-        
-        # 检查子进程的返回码
+        result = subprocess.run(['sh', 'tools/tmp.sh'], capture_output=True, text=True)
         if result.returncode == 0:
             print(result.stdout)
         else:
             print(result.stderr)
-                # 压缩hy-tmp文件夹
         return result.stdout
     return "OK"
-app.run(debug=DEBUG, port=8080, host="0.0.0.0")
+comfyui_process = "No Process"
+@app.route("/comfyui")
+def comfyui():
+    global comfyui_process
+    if comfyui_process != "No Process":
+        if comfyui_process.poll() is not None:
+            comfyui_process = "No Process"
+    if comfyui_process != "No Process":
+        return "Process Running"
+    with open("logs/comfyui.log", "w") as log:
+        comfyui_process = subprocess.Popen(['bash', 'tools/comfyui.sh'], stdout=log)
+    return "OK"
+
+@app.route("/comfyui/log")
+def comfyui_log():
+    global comfyui_process
+    if comfyui_process != "No Process":
+        if comfyui_process.poll() is not None:
+            comfyui_process = "No Process"
+            return "Process Finished"
+    else:
+        return "Process Finished"
+    with open("logs/comfyui.log", "r") as log:
+        return log.read()
+app.run(debug=True, port=8080, host="0.0.0.0")
 
 # C:\Users\Administrator\Desktop\ComfyUI
