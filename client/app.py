@@ -3,8 +3,8 @@ from flask_cors import CORS
 import os
 import json
 import subprocess
-DEBUG = False
-root_dir = "/mnt/c/Users/Administrator/Desktop/MyVueApp/client"
+DEBUG = True
+root_dir = "C:\\Users\\Administrator\\Desktop\\ComfyUI"
 if not DEBUG:
     os.system("oss login")
     root_dir = "/hy-tmp/"

@@ -1,25 +1,15 @@
 <template>
   <el-config-provider :locale="locale"> <!-- 通过配置全局的国际化配置 -->
-    <!-- 目录树 -->
-    <el-drawer v-model="file_tree_state" title="I have a nested table inside!" direction="rtl" size="50%">
+
+    <el-tabs v-model="main_tabs" class="demo-tabs" @tab-click="tabs_change">
+      <!-- 文件树 -->
+    <el-tab-pane label="文件树" name="file_tree">
       <el-tree style="max-width: 600px" :data="file_tree_data" show-checkbox @check-change="TreeChange" />
       <el-button type="primary" @click="chosses_tree_finish">OK</el-button>
-    </el-drawer>
-    <div style="display: flex;"> <!-- 修改: 添加flex布局 -->
-      <el-card>
-        <template #header>
-          <div class="card-header">
-            <el-badge value="测试功能" class="item" type="primary">
-              <span>目录树</span>
-            </el-badge>
-          </div>
-        </template>
-        <el-button text @click="file_tree_state = true" type="primary">打开目录树</el-button>
-      </el-card>
-      <!-- 选择模块 -->
-      <el-card>
-        <template #header>
-          <div class="card-header">
+    </el-tab-pane>
+
+    <el-tab-pane label="Config" name="second">          
+      <div class="card-header">
             <span>Server1</span>
             <button class="reset_button" @click="reset_root_url">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="20" height="20">
@@ -31,12 +21,8 @@
             <br>
             <span>IP: {{ root_url }}</span>
           </div>
-        </template>
-        <el-cascader v-model="value" :options="file_tree_data" @change="chosseHandle" />
-        <template #footer>
-          <el-button type="primary" @click="chosses_finish">OK</el-button>
-        </template>
-      </el-card>
+        </el-tab-pane>
+    <el-tab-pane label="Role" name="third">
       <!-- 上传到OSS -->
       <el-card>
         <template #header>
@@ -47,7 +33,12 @@
         <el-button type="primary" @click="Uploadhytmp">Hy-Tmp</el-button>
         <el-button type="primary" @click="Uploadroot">Root</el-button>
       </el-card>
-    </div>
+    </el-tab-pane>
+
+  </el-tabs>
+
+
+
   </el-config-provider>
 </template>
 
@@ -148,6 +139,14 @@ const TreeChange = (data   ) => {
 const chosses_tree_finish = () => {
   console.log(chosse_file)
 }
+
+
+
+const main_tabs = ref('file_tree')
+
+const tabs_change = (tab, event) => {
+  console.log(tab, event)
+}
 </script>
 
 
@@ -159,4 +158,6 @@ const chosses_tree_finish = () => {
   padding: 10px 20px;
   outline: none;
 }
+
+
 </style>

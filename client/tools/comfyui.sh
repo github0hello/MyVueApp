@@ -1,5 +1,2 @@
-echo "Starting ComfyUI installation..."
-sleep 6
-echo "Installing dependencies..."
-sleep 1
-echo "OK"
+cd /hy-tmp/ComfyUI
+python main.py --host 0.0.0.0

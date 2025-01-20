@@ -14,6 +14,11 @@ const router = createRouter({
       name:'ComfyUI',
       component:()=>import('../views/ComfyUI.vue')
 
+    },
+    {
+      path:'/settings',
+      name:'settings',
+      component:()=>import('../views/Setting_page.vue')
     }
   ],
 })
