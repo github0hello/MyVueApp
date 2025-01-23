@@ -10,6 +10,7 @@ if not DEBUG:
     root_dir = "/hy-tmp/"
 app = Flask(__name__)
 CORS(app)
+
 def get_dir_tree_json(root_dir):
     """
     获取目录树结构
@@ -33,7 +34,7 @@ def get_dir_tree_json(root_dir):
         return dir_tree
 
     if not os.path.exists(root_dir) or not os.path.isdir(root_dir):
-        raise ValueError("输入的路径不存在或不是文件夹")
+        return "输入的路径不存在或不是文件夹", 500
 
     dir_tree = get_dir_tree(root_dir)
     return json.dumps(dir_tree, ensure_ascii=False, indent=2)
@@ -59,16 +60,21 @@ def api():
     print(root_dir + path)
     return "OK"
 
+tmp_upload = "No Process"
 @app.route('/hy-tmp', methods=['GET'])
 def hy_tmp():
     if not DEBUG:
-        result = subprocess.run(['sh', 'tools/tmp.sh'], capture_output=True, text=True)
-        if result.returncode == 0:
-            print(result.stdout)
-        else:
-            print(result.stderr)
-        return result.stdout
+        global tmp_upload
+        if tmp_upload != "No Process":
+            if tmp_upload.poll() is not None:
+                tmp_upload = "No Process"
+                return "Process Finished"
+            return "Process Running"
+        with open("logs/tmp.log", "w") as log:
+            tmp_upload = subprocess.Popen(['sh', 'tools/tmp.sh'], stdout=log, stderr=log)
     return "OK"
+
+
 comfyui_process = "No Process"
 @app.route("/comfyui")
 def comfyui():
