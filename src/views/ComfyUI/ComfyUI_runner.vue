@@ -15,76 +15,77 @@
       </div>
     </div>
 
-
-
-    <!-- 浮动按钮 -->
-    <button class="floating-btn" @click="toggleScript">{{ buttonLabel }}</button>
+    <el-button class="floating-btn" @click="toggleScript">{{ buttonLabel }}</el-button>
+    <div>
+      <span>ComfyUI运行状态</span>
+      <br>
+      <span v-if="isScriptRunning">运行中</span>
+      <span v-else>未运行</span>
+    </div>
   </div>
 </template>
 
 <script>
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import io from "socket.io-client";
 
 export default {
-  data() {
-    return {
-      currentView: "start", // 控制显示终端或启动页面
-      terminalOpen: false, // 终端是否打开
-      displayState: "block", // 终端显示状态
-      logs: [], // 终端日志
-      socket: io("http://127.0.0.1:8080"), // Socket.io 实例
-      isDragging: false, // 是否正在拖动
-      offsetX: 0, // 拖动偏移量
-      offsetY: 0,
-      isScriptRunning: false, // 脚本是否正在运行
-    };
-  },
-  computed: {
-    // 动态计算按钮文本
-    buttonLabel() {
-      if (!this.terminalOpen) {
+  setup() {
+    const currentView = ref("start");
+    const terminalOpen = ref(false);
+    const displayState = ref("block");
+    const logs = ref([]);
+    const socket = io("http://127.0.0.1:8080");
+    const isDragging = ref(false);
+    const offsetX = ref(0);
+    const offsetY = ref(0);
+    const isScriptRunning = ref(false);
+    const terminal = ref(null);
+    const terminalContent = ref(null);
+
+    const buttonLabel = computed(() => {
+      if (!terminalOpen.value) {
         return "打开窗口";
-      } else if (this.isScriptRunning) {
+      } else if (isScriptRunning.value) {
         return "停止脚本";
       } else {
         return "运行脚本";
       }
-    },
-  },
-  methods: {
-    // 启动脚本
-    startScript() {
-      this.socket.emit("start_test");
-      this.isScriptRunning = true;
-      this.currentView = "terminal"; // 切换到终端视图
-      this.terminalOpen = true;
-    },
-    // 停止脚本
-    stopScript() {
-      this.socket.emit("stop_test");
-      this.isScriptRunning = false;
-    },
-    // 关闭终端
-    closeTerminal() {
-      this.currentView = "start"; // 切换回启动页面
-      this.terminalOpen = false;
-      this.isScriptRunning = false;
-    },
-    // // 重新打开终端
-    // reopenTerminal() {
-    //   this.currentView = "terminal";
-    //   this.terminalOpen = true;
-    // },
-    // 最小化终端
-    minimize() {
-      this.$refs.terminal.style.height = "50px";
-      this.$refs.terminal.style.overflow = "hidden";
-      this.$refs.terminalContent.style.display = "none";
-    },
-    // 切换全屏
-    toggleFullScreen() {
+    });
+
+    const startScript = () => {
+      socket.emit("start_comfyui");
+      isScriptRunning.value = true;
+      currentView.value = "terminal";
+      terminalOpen.value = true;
+    };
+
+    const stopScript = () => {
+      socket.emit("stop_comfyui");
+      isScriptRunning.value = false;
+    };
+
+    const closeTerminal = () => {
+      currentView.value = "start";
+      terminalOpen.value = false;
+      isScriptRunning.value = false;
+    };
+
+    const reopenTerminal = () => {
+      currentView.value = "terminal";
+      terminalOpen.value = true;
+    };
+
+    const minimize = () => {
+      terminal.value.style.height = "50px";
+      terminal.value.style.width = "300px";
+      terminal.value.style.overflow = "hidden";
+      terminalContent.value.style.display = "none";
+    };
+
+    const toggleFullScreen = () => {
       if (!document.fullscreenElement) {
-        this.$refs.terminal.requestFullscreen().catch((err) => {
+        terminal.value.requestFullscreen().catch((err) => {
           console.error(`无法进入全屏模式: ${err.message}`);
         });
       } else {
@@ -92,66 +93,88 @@ export default {
           console.error(`无法退出全屏模式: ${err.message}`);
         });
       }
-    },
-    // 开始拖动
-    startDragging(event) {
-      this.isDragging = true;
-      this.offsetX = event.clientX - this.$refs.terminal.getBoundingClientRect().left;
-      this.offsetY = event.clientY - this.$refs.terminal.getBoundingClientRect().top;
+    };
 
-      document.addEventListener("mousemove", this.onDragging);
-      document.addEventListener("mouseup", this.stopDragging);
-    },
-    // 拖动中
-    onDragging(event) {
-      if (this.isDragging) {
-        this.$refs.terminal.style.left = `${event.clientX - this.offsetX}px`;
-        this.$refs.terminal.style.top = `${event.clientY - this.offsetY}px`;
+    const startDragging = (event) => {
+      isDragging.value = true;
+      offsetX.value = event.clientX - terminal.value.getBoundingClientRect().left;
+      offsetY.value = event.clientY - terminal.value.getBoundingClientRect().top;
+
+      document.addEventListener("mousemove", onDragging);
+      document.addEventListener("mouseup", stopDragging);
+    };
+
+    const onDragging = (event) => {
+      if (isDragging.value) {
+        terminal.value.style.left = `${event.clientX - offsetX.value}px`;
+        terminal.value.style.top = `${event.clientY - offsetY.value}px`;
       }
-    },
-    // 停止拖动
-    stopDragging() {
-      this.isDragging = false;
-      document.removeEventListener("mousemove", this.onDragging);
-      document.removeEventListener("mouseup", this.stopDragging);
-    },
-    // 切换脚本运行状态
-    toggleScript() {
-      if (!this.terminalOpen) {
-        // 如果终端未打开，打开终端
-        this.reopenTerminal();
-      } else if (this.isScriptRunning) {
-        // 如果脚本正在运行，停止脚本
-        this.stopScript();
+    };
+
+    const stopDragging = () => {
+      isDragging.value = false;
+      document.removeEventListener("mousemove", onDragging);
+      document.removeEventListener("mouseup", stopDragging);
+    };
+
+    const toggleScript = () => {
+      if (!terminalOpen.value) {
+        reopenTerminal();
+      } else if (isScriptRunning.value) {
+        stopScript();
       } else {
-        // 如果脚本未运行，启动脚本
-        this.startScript();
+        startScript();
       }
-    },
-  },
-  mounted() {
-    // 监听日志消息
-    this.socket.on("log", (data) => {
-      console.log("Received log message:", data);
-      this.logs.push(data);
-      this.$nextTick(() => {
-        this.$refs.terminalContent.scrollTop = this.$refs.terminalContent.scrollHeight;
+    };
+
+    onMounted(() => {
+      socket.on("log", (data) => {
+        logs.value.push(data);
+        terminalContent.value.scrollTop = terminalContent.value.scrollHeight;
+
+
+      });
+
+      socket.on("stop_comfyui", () => {
+        isScriptRunning.value = false;
+        logs.value.push({ type: "info", message: "脚本已停止。" });
       });
     });
 
-    // 监听停止脚本消息
-    this.socket.on("stop_test", () => {
-      this.isScriptRunning = false;
-      this.logs.push({ type: "info", message: "脚本已停止。" });
+    onUnmounted(() => {
+      socket.off("log");
+      socket.off("stop_comfyui");
     });
+
+    return {
+      currentView,
+      terminalOpen,
+      displayState,
+      logs,
+      terminal,
+      terminalContent,
+      buttonLabel,
+      isScriptRunning,
+      startScript,
+      stopScript,
+      closeTerminal,
+      reopenTerminal,
+      minimize,
+      toggleFullScreen,
+      startDragging,
+      onDragging,
+      stopDragging,
+      toggleScript,
+    };
   },
 };
 </script>
 
+
 <style>
 .terminal {
-  width: 80%;
-  height: 80%;
+  width: 50%;
+  height: 50%;
   background-color: #000;
   border: 1px solid #333;
   border-radius: 10px;
@@ -175,6 +198,7 @@ export default {
   justify-content: space-between;
   cursor: move;
   user-select: none;
+
 }
 
 .terminal-header .terminal-title {
@@ -205,9 +229,12 @@ export default {
   padding: 20px;
   overflow-y: auto;
   font-size: 14px;
+  overflow:auto;
+  height: calc(100% - 40px);
+
 }
 
-.terminal-content .log-message {
+.terminal-content p {
   margin: 5px 0;
   color: #fff;
 }
@@ -248,13 +275,42 @@ export default {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color: #007bff;
-  color: #fff;
   border: none;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
   border-radius: 5px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* From Deepseek */
+.terminal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+  background: #666;
+  border-radius: 4px;
+}
+
+.terminal-content {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #666 #1e1e1e; /* Firefox */
+  overflow-y: auto;
+}
+
+
+
+.terminal-header {
+  flex-shrink: 0; /* 防止标题栏被压缩 */
+}
+
+.terminal-content {
+  flex: 1;
+  min-height: 100px; /* 保证最小高度 */
 }
 </style>

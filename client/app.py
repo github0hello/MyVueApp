@@ -3,7 +3,6 @@ from flask_cors import CORS
 import os
 import json
 import subprocess
-import requests
 from flask_socketio import SocketIO, emit
 import threading
 
@@ -22,26 +21,46 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 current_process = None
 
 
+def read_config():
+    with open("config.json", "r", encoding="utf-8") as f:
+        config_json = json.load(f)
+    hosts = config_json["ComfyUI"]["hosts"]
+    device = config_json["ComfyUI"]["device"]
+    cwd = config_json["ComfyUI"]["cwd"]
+    port = str(config_json["ComfyUI"]["port"])
+    return hosts, device, cwd, port
+
+
 def run_test_bat():
     global current_process
+    hosts, device, cwd, port = read_config()
+    if device == "cpu":
+        device_command = "--cpu"
+    else:
+        device_command = "--cuda"
     command = [
         r".\python_embeded\python.exe",
         "-s",
         r"ComfyUI\main.py",
-        "--cpu",
-        "--windows-standalone-build",
+        "{}".format(device_command),
         "--listen",
-        "0.0.0.0"
+        hosts,
+        "--port",
+        port
     ]
     """运行 test.bat 并将输出实时发送到前端"""
     current_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True, cwd="C:\\Users\\Administrator\\Desktop\\ComfyUI")
     for line in iter(current_process.stdout.readline, ''):
         socketio.emit('log', {'message': line.strip()})  # 发送日志到前端
-    current_process.stdout.close()
-    current_process.wait()
+    if current_process is  None:
+        print("Script finished.")
+    else:
+        current_process.stdout.close()
+        current_process.wait()
     current_process = None  # 清理进程引用
+    print("Script stopped.")
 
-@socketio.on('start_test')
+@socketio.on('start_comfyui')
 def handle_start_test():
     
     print("Start ComfyUI")
@@ -50,23 +69,16 @@ def handle_start_test():
     else:
         emit('log', {'message': "脚本已经在运行！"})
 
-@socketio.on('stop_test')
+@socketio.on('stop_comfyui')
 def handle_stop_test():
-    print("Stop ComfyUI")
     global current_process
     if current_process:
-        current_process.terminate()  # 终止子进程
+        current_process.kill()  # 终止子进程
+        print("Stop ComfyUI")
         current_process = None
         emit('log', {'message': "脚本已停止。"})
     else:
         emit('log', {'message': "没有正在运行的脚本。"})
-
-
-
-
-
-
-
 
 
 def get_dir_tree_json(root_dir):

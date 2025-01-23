@@ -20,7 +20,7 @@
             </template>
             <el-menu-item-group title="ComfyUI">
               <el-menu-item index="1-1">安装</el-menu-item>
-              <el-menu-item index="1-2">启动</el-menu-item>
+              <el-menu-item index="1-2" @click="$router.push('/ComfyUI/runner')">启动</el-menu-item>
             </el-menu-item-group>
 
           </el-sub-menu>
