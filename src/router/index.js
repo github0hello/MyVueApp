@@ -10,9 +10,9 @@ const router = createRouter({
       component: Index_pages,
     },
     {
-      path:'/ComfyUI',
+      path:'/ComfyUI/runner',
       name:'ComfyUI',
-      component:()=>import('../views/ComfyUI.vue')
+      component:()=>import('../views/ComfyUI/ComfyUI_runner.vue')
 
     },
     {

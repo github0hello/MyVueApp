@@ -121,12 +121,7 @@ const Uploadroot = () => {
 
 
 
-const reset_root_url = () => {
-  root_url = prompt("请输入Server1的IP地址", "http://127.0.0.1:8080/")
-  Cookies.set("root_url", root_url, { expires: 7 })
-  window.location.href = window.location.href
 
-}
 
 const TreeChange = (data   ) => {
   if (chosse_file.includes(data.value)) {

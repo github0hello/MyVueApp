@@ -1,15 +1,73 @@
-from flask import Flask, request
+from flask import *
 from flask_cors import CORS
 import os
 import json
 import subprocess
+import requests
+from flask_socketio import SocketIO, emit
+import threading
+
+
 DEBUG = True
-root_dir = "C:\\Users\\Administrator\\Desktop\\ComfyUI"
+root_dir = "C:\\Users\\Administrator\\Desktop\\ComfyUI\\ComfyUI"
 if not DEBUG:
     os.system("oss login")
     root_dir = "/hy-tmp/"
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# 用于存储当前运行的子进程
+current_process = None
+
+
+def run_test_bat():
+    global current_process
+    command = [
+        r".\python_embeded\python.exe",
+        "-s",
+        r"ComfyUI\main.py",
+        "--cpu",
+        "--windows-standalone-build",
+        "--listen",
+        "0.0.0.0"
+    ]
+    """运行 test.bat 并将输出实时发送到前端"""
+    current_process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True, cwd="C:\\Users\\Administrator\\Desktop\\ComfyUI")
+    for line in iter(current_process.stdout.readline, ''):
+        socketio.emit('log', {'message': line.strip()})  # 发送日志到前端
+    current_process.stdout.close()
+    current_process.wait()
+    current_process = None  # 清理进程引用
+
+@socketio.on('start_test')
+def handle_start_test():
+    
+    print("Start ComfyUI")
+    if current_process is None:
+        threading.Thread(target=run_test_bat).start()
+    else:
+        emit('log', {'message': "脚本已经在运行！"})
+
+@socketio.on('stop_test')
+def handle_stop_test():
+    print("Stop ComfyUI")
+    global current_process
+    if current_process:
+        current_process.terminate()  # 终止子进程
+        current_process = None
+        emit('log', {'message': "脚本已停止。"})
+    else:
+        emit('log', {'message': "没有正在运行的脚本。"})
+
+
+
+
+
+
+
+
 
 def get_dir_tree_json(root_dir):
     """
@@ -99,6 +157,11 @@ def comfyui_log():
         return "Process Finished"
     with open("logs/comfyui.log", "r") as log:
         return log.read()
-app.run(debug=True, port=8080, host="0.0.0.0")
+
+# ssh -f -N -T -R 8188:localhost:8188 用户名@本地主机IP
+
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True, host='0.0.0.0', port=8080)
 
 # C:\Users\Administrator\Desktop\ComfyUI
