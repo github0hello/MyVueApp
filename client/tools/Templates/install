@@ -1,0 +1,4 @@
+cd {{ install_path }}
+git clone {{ comfyui_mirror }}
+cd ComfyUI
+pip install -r {{ pip_mirror }}

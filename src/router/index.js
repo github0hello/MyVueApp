@@ -19,6 +19,21 @@ const router = createRouter({
       path:'/settings',
       name:'settings',
       component:()=>import('../views/Setting_page.vue')
+    },
+    {
+      path:"/Dowload_models",
+      name:"Dowload models",
+      component:()=>import('../views/model_downloader.vue')
+    },
+    {
+      path:"/custom_nodes",
+      name:"custom_nodes",
+      component:()=>import('../views/custom_nodes.vue')
+    },
+    {
+      path:"/ComfyUI/installer",
+      name:"ComfyUI installer",
+      component:()=>import('../views/ComfyUI/ComfyUI_Installer.vue')
     }
   ],
 })

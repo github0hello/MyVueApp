@@ -5,6 +5,9 @@ import json
 import subprocess
 from flask_socketio import SocketIO, emit
 import threading
+from jinja2 import Template
+
+
 
 
 DEBUG = True
@@ -73,7 +76,7 @@ def handle_start_test():
 def handle_stop_test():
     global current_process
     if current_process:
-        current_process.kill()  # 终止子进程
+        current_process.terminate()  # 终止子进程
         print("Stop ComfyUI")
         current_process = None
         emit('log', {'message': "脚本已停止。"})
@@ -131,48 +134,80 @@ def api():
     return "OK"
 
 tmp_upload = "No Process"
-@app.route('/hy-tmp', methods=['GET'])
-def hy_tmp():
-    if not DEBUG:
-        global tmp_upload
-        if tmp_upload != "No Process":
-            if tmp_upload.poll() is not None:
-                tmp_upload = "No Process"
-                return "Process Finished"
-            return "Process Running"
+tmp_status = "No Process"
+@app.route('/hy-tmp/upload', methods=['GET'])
+def hy_tmp_upload():
+    global tmp_upload
+    if tmp_status not in ["Uploading", "No Process", "Downloading"]:
+        if tmp_upload.poll() is not None:
+            tmp_upload = "No Process"
+            tmp_status = "No Process"
+            return "No Process"
+    if tmp_upload == "No Process":
         with open("logs/tmp.log", "w") as log:
-            tmp_upload = subprocess.Popen(['sh', 'tools/tmp.sh'], stdout=log, stderr=log)
-    return "OK"
-
-
-comfyui_process = "No Process"
-@app.route("/comfyui")
-def comfyui():
-    global comfyui_process
-    if comfyui_process != "No Process":
-        if comfyui_process.poll() is not None:
-            comfyui_process = "No Process"
-    if comfyui_process != "No Process":
-        return "Process Running"
-    with open("logs/comfyui.log", "w") as log:
-        comfyui_process = subprocess.Popen(['bash', 'tools/comfyui.sh'], stdout=log)
-    return "OK"
-
-@app.route("/comfyui/log")
-def comfyui_log():
-    global comfyui_process
-    if comfyui_process != "No Process":
-        if comfyui_process.poll() is not None:
-            comfyui_process = "No Process"
-            return "Process Finished"
+            tmp_upload = subprocess.Popen(['sh', 'tools/tmp.sh', "upload"], stdout=log, stderr=log)
+            tmp_status = "Uploading"
+            return "Start Upload"
+    elif tmp_status == "Uploading":
+        return "Uploading"
     else:
-        return "Process Finished"
-    with open("logs/comfyui.log", "r") as log:
-        return log.read()
+        app.logger.error("ERROR: ${tmp_status}")
+        return "ERROR", 405
+    
+@app.route('/hy-tmp/download', methods=['GET'])
+def hy_tmp_download():
+    # 声明全局变量 tmp_upload 和 tmp_status
+    global tmp_upload, tmp_status
+    # 检查 tmp_status 是否不在 ["Uploading", "No Process", "Downloading"] 列表中
+    if tmp_status not in ["Uploading", "No Process", "Downloading"]:
+        if tmp_upload.poll() is not None:
+            tmp_upload = "No Process"
+            tmp_status = "No Process"
+            return "No Process"
+    if tmp_upload == "No Process":
+        with open("logs/tmp.log", "w") as log:
+            tmp_upload = subprocess.Popen(['sh', 'tools/tmp.sh', "download"], stdout=log, stderr=log)
+            tmp_status = "Downloading"
+            return "Start Download"
+    elif tmp_status == "Downloading":
+        return "Downloading"
+    else:
+        app.logger.error("ERROR: ${tmp_status}")
+        return "ERROR", 405
+    
+    
 
 # ssh -f -N -T -R 8188:localhost:8188 用户名@本地主机IP
 
 
+
+def run_command_install(commands):
+    todo_list = ["Change dir", "Clone project", "Change dir", "Install requirements"]
+    global status
+    for command, todo in zip(commands.split("\n"), todo_list):
+        process = subprocess.run(command.split())
+        if process.returncode != 0:
+            status = "ERROR: " + todo
+        status = todo
+    status = "Finished"
+
+@app.route('/api/install_comfyui', methods=['GET','POST'])
+def install_comfyui():
+    global status
+    status = "No Process"
+    if request.method == 'GET':
+        return status
+    
+    print(open("tools/Templates/install", "r").read())
+    cmd = Template(open("tools/Templates/install", "r").read())
+    command = cmd.render(install_path=request.json['install_path'])
+    threading.Thread(target=run_command_install, args=(command,)).start()
+    return status
+
+@socketio.on('get_install_status')
+def get_install_status():
+    global status
+    socketio.emit('install_status', status)
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=8080)
 
